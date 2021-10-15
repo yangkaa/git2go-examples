@@ -20,8 +20,8 @@ func (a *BasicAuth) credentialsCallback(url string, usernameFromURL string, allo
 }
 
 func main() {
-	url, directory, username, password := os.Args[1], os.Args[2], os.Args[3], os.Args[4]
-	logrus.Infof("%v   %v   %v  %v ", url, directory, username, password)
+	url, directory, username, password, branchOrTag := os.Args[1], os.Args[2], os.Args[3], os.Args[4], os.Args[5]
+	logrus.Infof("%v  %v  %v  %v  %v", url, directory, username, password, branchOrTag)
 
 	auth := BasicAuth{Username: username, Password: password}
 	cloneOptions := &git.CloneOptions{
@@ -35,6 +35,15 @@ func main() {
 	repo, err := git.Clone(url, directory, cloneOptions)
 	if err != nil {
 		logrus.Errorf("[Clone] err is %v", err)
+		return
+	}
+	ref, err := repo.References.Dwim(branchOrTag)
+	if err != nil {
+		logrus.Errorf("Could not find the %s ref: %v", branchOrTag, err)
+		return
+	}
+	if err := repo.SetHeadDetached(ref.Target()); err != nil {
+		logrus.Errorf("Checking out tag %s failed: %v", branchOrTag, err)
 		return
 	}
 	logrus.Infof("repo is %v", repo)
